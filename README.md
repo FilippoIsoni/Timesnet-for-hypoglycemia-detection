@@ -33,4 +33,37 @@ Isolando la finestra notturna di 8 ore (es. dalle 23:00 alle 07:00, pari a esatt
 $$X_{2D} = \text{Reshape}(X_{1D}) \in \mathbb{R}^{C \times 10 \times 96}$$
 
 Questa topologia dota la matrice di una semantica spaziale rigorosa:
-* **Colonne (Variazione Intra-periodo):** I 96 step catturano l'evoluzione metabolica a breve termine interna alla sing
+* **Colonne (Variazione Intra-periodo):** I 96 step catturano l'evoluzione metabolica a breve termine interna alla singola notte. L'allineamento è assoluto: la Colonna 0 rappresenta sempre le ore 23:00, la Colonna 48 rappresenta sempre le ore 03:00.
+* **Righe (Variazione Inter-periodo):** Le 10 righe allineano verticalmente lo stesso identico istante temporale attraverso i giorni consecutivi, permettendo alla rete di confrontare l'andamento orario sapendo che tra una riga e la successiva intercorrono esattamente 24 ore.
+* **Canali ($C$ variabili):** Le feature multi-variate (CGM, Insulina Basale, Insulina Bolo/Totale) vengono impilate nella terza dimensione, venendo elaborate simultaneamente come i canali RGB di un'immagine.
+
+---
+
+## 🛠️ 3. Pipeline Tecnica e Flusso dei Dati
+
+```mermaid
+graph TD
+    subgraph step1 [1. Preprocessing & Extraction]
+        A[(MetaboNet Parquet)] -->|Filtro Modalità| B[Solo Soggetti SAP / AID]
+        B -->|Estrazione 23:00 - 07:00| C[Imputazione Lineare Gap < 30 min]
+    end
+
+    subgraph step2 [2. Augmentation & Reshape]
+        C -->|Sliding Window: Shift 96 Step| D[Tensori Correlati 1D]
+        D -->|Reshape Circadiano Fisso| E[Tensore 3D: C x 10 x 96]
+    end
+
+    subgraph step3 [3. Non-Supervised TimesBlock]
+        E -->|Input| F[Inception Block 2D condiviso]
+        F -->|Conv2D Multi-scala 1x1, 3x3| G[Estrazione Pattern Stabilità]
+        G -->|Ritorno a 1D + Proiezione| H[Tensore Ricostruito]
+    end
+
+    subgraph step4 [4. Early Warning Inference]
+        H -->|Confronto con Originale| I[Calcolo Loss MSE riga per riga]
+        I -->|Se > 95° Percentile Sani| J{🚨 ALLARME PRECOCE}
+        J -->|Anticipo Clinico| K[Lead Time: +20/40 min]
+    end
+
+    style J fill:#be123c,stroke:#fff,stroke-width:2px,color:#fff
+    style E fill:#0284c7,stroke:#fff,stroke-width:2px,color:#fff
