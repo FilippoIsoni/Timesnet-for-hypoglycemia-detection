@@ -60,6 +60,20 @@ graph TD
     end
 
     subgraph 4. Early Warning Inference
+
+@article{wolff2026metabonet,
+  title={MetaboNet: The Largest Publicly Available Consolidated Dataset for Type 1 Diabetes Management},
+  author={Wolff, Miriam K and Aiello, Eleonora Maria and Calhoun, Peter and Qin, Yao and Royston, Sam F},
+  journal={Journal of Diabetes Science and Technology},
+  year={2026}
+}
+
+@inproceedings{wu2023timesnet,
+  title={TimesNet: Temporal 2D-Variation Modeling for General Time Series Analysis},
+  author={Wu, Haixu and Hu, Tengge and Liu, Yong and Zhou, Hang and Wang, Jianmin and Long, Mingsheng},
+  booktitle={International Conference on Learning Representations (ICLR)},
+  year={2023}
+}
         H -->|Confronto con Originale| I[Calcolo Loss MSE riga per riga]
         I -->|Se > 95° Percentile Sani| J{🚨 ALLARME PRECOCE}
         J -->|Anticipo Clinico| K[Lead Time: +20/40 min]
