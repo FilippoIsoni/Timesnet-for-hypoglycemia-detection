@@ -1,43 +1,43 @@
 # Timesnet-for-hypoglycemia-detection
-# 🩸 T1D-TimesNet: Nocturnal Hypoglycemia Early Warning
+# 🔬 T1D-TimesNet: Advanced 2D-Variation Modeling for Metabolic Safety
 
-[![MetaboNet Dataset](https://img.shields.io/badge/Dataset-MetaboNet-red.svg)](https://arxiv.org/abs/2601.11505)
-[![Architecture-TimesNet](https://img.shields.io/badge/Architecture-TimesNet-blue.svg)](https://arxiv.org/abs/2210.02186)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Python 3.8+](https://img.shields.io/badge/python-3.8+-green.svg)](https://www.python.org/)
+![Header](https://raw.githubusercontent.com/andreasbm/readme/master/assets/lines/aqua.png)
 
-> **Rilevamento intelligente e non supervisionato delle anomalie glicemiche notturne tramite modellazione 2D delle variazioni temporali.**
+## 📋 Executive Summary
+**T1D-TimesNet** è un framework di deep learning non supervisionato progettato per la sicurezza dei pazienti con Diabete di Tipo 1. Utilizza l'architettura **TimesNet** (ICLR 2023) per trasformare il monitoraggio continuo del glucosio (CGM) in uno spazio 2D, permettendo il rilevamento precoce di ipoglicemie notturne e guasti tecnici (occlusioni della cannula) con un anticipo clinico significativo.
 
----
 
-## 🎯 Il Problema: Rumore vs Fisiologia
-
-[span_0](start_span)Il monitoraggio del Diabete di Tipo 1 (T1D) è spesso ostacolato da dati "sporchi": diari dei pasti incompleti, stime errate dei carboidrati e registrazioni tardive dell'attività fisica[span_0](end_span). 
-
-**T1D-TimesNet** aggira questo rumore focalizzandosi sulla **fisiologia pura del sonno**. Durante la notte, l'assenza di interferenze esterne rende ogni deviazione un segnale critico. Il nostro obiettivo è prevedere l'ipoglicemia prima che avvenga, analizzando la rottura della stabilità metabolica.
 
 ---
 
-## 🧠 La Soluzione: Temporal 2D-Variation
+## 🛠 Architettura Matematica: Il Potere del Reshape
 
-Invece di analizzare i dati come una sequenza 1D piatta, utilizziamo un'architettura **TimesNet adattata**. Trasformiamo il segnale in un **Tensore 2D** dove:
-- **Colonne (Phase):** Rappresentano i 96 step (5 min ciascuno) delle 8 ore notturne.
-- **Righe (History):** Rappresentano una sequenza di 10 notti consecutive.
+Il cuore del progetto risiede nella scomposizione delle variazioni temporali. Per una sequenza di input $X_{1D}$ di lunghezza $T = 960$ (10 notti $\times$ 96 campioni), applichiamo un reshape 2D basato sulla periodicità circadiana $P = 96$:
 
-[span_1](start_span)In questo modo, i kernel convoluzionali dell'Inception Block possono confrontare simultaneamente l'evoluzione oraria (intra-notte) e il trend storico (inter-notte)[span_1](end_span).
+$$X_{2D} = \text{Reshape}(X_{1D}) \in \mathbb{R}^{C \times 10 \times 96}$$
 
----
-
-## 🛠 Pipeline di Elaborazione
+### Perché questa struttura?
+- **Intra-period variations (Colonne):** Catturano la dinamica metabolica rapida (es. la velocità di assorbimento dell'insulina).
+- **Inter-period variations (Righe):** Catturano la deriva del fabbisogno basale attraverso i giorni.
 
 ```mermaid
-graph TD
-    A[MetaboNet Raw Data] -->|Filtro SAP/AID| B(Preprocessing)
-    B -->|Sliding Window 1 Notte| C{Dataset Augmentation}
-    C -->|Reshape 10x96| D[Tensore 2D Multi-variato]
-    D --> E[TimesBlock Inception]
-    E -->|Ricostruzione| F[Errore di Ricostruzione MSE]
-    F -->|Superamento Soglia| G{🚨 ALLARME PRECOCE}
-    
-    style G fill:#f96,stroke:#333,stroke-width:2px
-    style A fill:#fff,stroke:#333
+graph LR
+    subgraph Input_Space
+    A[CGM 1D Stream] --> B[Standardization]
+    B --> C[Fixed Reshape 10x96]
+    end
+
+    subgraph TimesBlock_Core
+    C --> D[Inception Block 2D]
+    D --> E[Multi-scale Kernels 1x1, 3x3, 5x5]
+    E --> F[Parameter Sharing]
+    end
+
+    subgraph Output_Space
+    F --> G[1D Reconstruction]
+    G --> H[MSE Loss Calculation]
+    H --> I{Anomaly Score}
+    end
+
+    style I fill:#f15,stroke:#333,color:#fff
+   
